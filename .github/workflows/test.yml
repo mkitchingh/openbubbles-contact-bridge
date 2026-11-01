@@ -44,6 +44,33 @@ jobs:
               sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
             }
           } | ConvertTo-Json | Set-Content build/package/manifest.json -Encoding utf8
+      - name: Test packaged Windows inspector end to end
+        shell: powershell
+        run: |
+          $snapshot = Join-Path $PWD 'build/e2e-snapshot'
+          $reportPath = Join-Path $PWD 'build/e2e-report.json'
+          dart run tool/create_inspection_fixture.dart $snapshot
+          Push-Location build/package
+          try {
+            & ./openbubbles-db-inspector.exe --snapshot $snapshot --output $reportPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged inspector exited with code $LASTEXITCODE"
+            }
+          } finally {
+            Pop-Location
+          }
+          $reportText = Get-Content -LiteralPath $reportPath -Raw
+          $report = $reportText | ConvertFrom-Json
+          if ($report.entities.contacts -ne 2) { throw 'Unexpected contact count' }
+          if ($report.contacts.emptyIds -ne 1) { throw 'Unexpected empty ID count' }
+          if ($report.handles.linked -ne 1) { throw 'Unexpected linked handle count' }
+          if ($report.privacy.containsContactValues -ne $false) {
+            throw 'Privacy flag does not reject contact values'
+          }
+          $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000')
+          foreach ($value in $forbidden) {
+            if ($reportText.Contains($value)) { throw "Report leaked fixture value: $value" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: OpenBubbles-Contact-Bridge-Windows
