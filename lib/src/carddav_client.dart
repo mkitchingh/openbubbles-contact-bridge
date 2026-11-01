@@ -218,6 +218,23 @@ class GoogleCardDavClient {
           body: body, headers: headers, redirects: redirects + 1);
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == HttpStatus.forbidden) {
+        final challenge = response.headers['www-authenticate'] ?? '';
+        if (challenge.contains('insufficient_scope')) {
+          throw StateError(
+              'Google did not grant the CardDAV scope. Confirm it under '
+              'Google Auth Platform > Data Access, then authorize again.');
+        }
+        if (response.body.contains('SERVICE_DISABLED') ||
+            response.body.contains('accessNotConfigured')) {
+          throw StateError(
+              'Google People API is disabled for this project. Enable the '
+              'People API in Google Cloud, wait a minute, and try again.');
+        }
+        throw StateError(
+            'Google refused CardDAV access. Enable the People API and confirm '
+            'the CardDAV scope and test user in Google Auth Platform.');
+      }
       throw StateError('CardDAV $method failed with HTTP ${response.statusCode}.');
     }
     return _CardDavResponse(url: uri, body: response.body);

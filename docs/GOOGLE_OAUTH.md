@@ -6,11 +6,13 @@ OpenBubbles tokens.
 1. Create or select a Google Cloud project.
 2. Configure the OAuth consent screen. While the app remains in testing, add
    the Google accounts that will test it.
-3. Create an OAuth client with application type **Desktop app**.
-4. Download the client JSON. Do not commit that file to this repository.
-5. Extract the complete Windows artifact, close OpenBubbles including its tray
+3. Enable the **People API** for the same Google Cloud project.
+4. Add `https://www.googleapis.com/auth/carddav` under **Data Access**.
+5. Create an OAuth client with application type **Desktop app**.
+6. Download the client JSON. Do not commit that file to this repository.
+7. Extract the complete Windows artifact, close OpenBubbles including its tray
    icon, and double-click `Start-OpenBubblesGoogleDryRun.cmd`.
-6. Select the downloaded OAuth JSON, choose where to save the redacted report,
+8. Select the downloaded OAuth JSON, choose where to save the redacted report,
    and complete authorization in the system browser.
 
 The browser flow uses a random loopback port, state verification, and PKCE. The
