@@ -23,7 +23,10 @@ jobs:
         shell: powershell
         run: ./test/Discovery.SelfTest.ps1
       - name: Compile Windows inspector
-        run: dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path build/package -Force | Out-Null
+          dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
       - name: Assemble Windows artifact
         shell: powershell
         run: |
@@ -31,7 +34,8 @@ jobs:
           New-Item -ItemType Directory -Path build/package/tools -Force | Out-Null
           Copy-Item lib/objectbox.dll build/package/lib/objectbox.dll
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
-          Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/Start-OpenBubblesDatabaseInspection.ps1
+          Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
+          Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
           Copy-Item README.md, LICENSE build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{

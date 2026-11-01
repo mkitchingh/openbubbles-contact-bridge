@@ -72,7 +72,7 @@ inspector:
 ```
 
 End users should download the `OpenBubbles-Contact-Bridge-Windows` workflow
-artifact and run `Start-OpenBubblesDatabaseInspection.ps1`. It creates the
+artifact and double-click `Start-OpenBubblesDatabaseInspection.cmd`. It creates the
 snapshot, runs the compiled inspector, saves a redacted count-only report, and
 removes the temporary database copy automatically.
 
