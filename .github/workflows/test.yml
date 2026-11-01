@@ -19,6 +19,7 @@ jobs:
         shell: powershell
         run: |
           dart pub get
+          git diff --exit-code -- pubspec.lock
       - name: Install pinned ObjectBox native library
         shell: bash
         run: |
@@ -46,7 +47,7 @@ jobs:
           Copy-Item tools/Start-OpenBubblesGoogleDryRun.ps1 build/package/tools/Start-OpenBubblesGoogleDryRun.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
           Copy-Item Start-OpenBubblesGoogleDryRun.cmd build/package/Start-OpenBubblesGoogleDryRun.cmd
-          Copy-Item README.md, LICENSE, oauth-client.example.json, pubspec.lock build/package/
+          Copy-Item README.md, LICENSE, oauth-client.example.json build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{
               path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)

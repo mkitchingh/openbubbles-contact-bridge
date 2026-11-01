@@ -67,6 +67,9 @@ Future<Map<String, Object?>> planDryRun(
         updates++;
       }
     }
+    final unmatchedStoredStableContacts = storedByStableId.keys
+        .where((stableId) => !fetchedById.containsKey(stableId))
+        .length;
 
     final addressOwners = <String, Set<String>>{};
     for (final entry in fetchedById.entries) {
@@ -134,6 +137,7 @@ Future<Map<String, Object?>> planDryRun(
         'insertStableContacts': inserts,
         'updateExistingStableContacts': updates,
         'unchangedStableContacts': unchanged,
+        'preserveUnmatchedStableContacts': unmatchedStoredStableContacts,
         'preserveSharedContacts': shared,
         'uniqueHandleMatches': uniqueHandleMatches,
         'ambiguousHandleMatches': ambiguousHandleMatches,
