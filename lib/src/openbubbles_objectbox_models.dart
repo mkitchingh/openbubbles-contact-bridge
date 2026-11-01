@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:objectbox/objectbox.dart';
 
 // Minimal persistence models matching the public OpenBubbles 1.15.0 ObjectBox
@@ -115,8 +117,16 @@ class ThemeStruct {
 }
 
 class Contact {
-  dynamic dbId, id, displayName, phones, emails, avatar, dbStructuredName,
-      isShared, isDismissed, posterPath;
+  int? dbId;
+  String id;
+  String displayName;
+  List<String> phones;
+  List<String> emails;
+  Uint8List? avatar;
+  String? dbStructuredName;
+  bool isShared;
+  bool isDismissed;
+  String? posterPath;
   Contact({this.dbId, this.id = '', this.displayName = '',
       this.phones = const <String>[], this.emails = const <String>[],
       this.avatar, this.dbStructuredName, this.isShared = false,

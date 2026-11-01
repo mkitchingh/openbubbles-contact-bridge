@@ -15,28 +15,31 @@ void main() {
       ..createSync(recursive: true);
 
     final store = Store(getObjectBoxModel(), directory: database.path);
-    final contactBox = store.box<Contact>();
-    final firstId = contactBox.put(Contact(
-      id: '',
-      displayName: 'Must Not Leak',
-      phones: const ['+15550102000'],
-      emails: const ['private@example.test'],
-    ));
-    contactBox.put(Contact(
-      id: 'carddav-uid:stable-test',
-      displayName: 'Also Private',
-      phones: const <String>[],
-      emails: const <String>[],
-    ));
-    final handle = Handle(
-      originalROWID: 1,
-      address: '+15550102000',
-      uniqueAddressAndService: '+15550102000/iMessage',
-      service: 'iMessage',
-    );
-    handle.contactRelation.targetId = firstId;
-    store.box<Handle>().put(handle);
-    store.close();
+    try {
+      final contactBox = store.box<Contact>();
+      final firstId = contactBox.put(Contact(
+        id: '',
+        displayName: 'Must Not Leak',
+        phones: const ['+15550102000'],
+        emails: const ['private@example.test'],
+      ));
+      contactBox.put(Contact(
+        id: 'carddav-uid:stable-test',
+        displayName: 'Also Private',
+        phones: const <String>[],
+        emails: const <String>[],
+      ));
+      final handle = Handle(
+        originalROWID: 1,
+        address: '+15550102000',
+        uniqueAddressAndService: '+15550102000/iMessage',
+        service: 'iMessage',
+      );
+      handle.contactRelation.targetId = firstId;
+      store.box<Handle>().put(handle);
+    } finally {
+      store.close();
+    }
 
     final dataFile = File('${database.path}${Platform.pathSeparator}data.mdb');
     final hash = (await sha256.bind(dataFile.openRead()).first).toString();
