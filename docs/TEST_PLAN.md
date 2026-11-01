@@ -22,6 +22,7 @@
 - Google vCard parsing with UID and href identity paths
 - dry-run duplicate-ID rejection and count-only privacy assertions
 - packaged Google dry-run executable against a real ObjectBox fixture
+- multi-contact Google vCard export parsing and packaged offline dry run
 
 ## Store-build validation (read-only)
 

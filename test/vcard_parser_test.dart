@@ -33,4 +33,28 @@ void main() {
     expect(contact.displayName, 'Dr. Given Middle Family Jr.');
     expect(contact.usedUid, isFalse);
   });
+
+  test('splits a Google Contacts export containing multiple cards', () {
+    const bundle = 'BEGIN:VCARD\r\nVERSION:3.0\r\nUID:one\r\n'
+        'FN:Private One\r\nEND:VCARD\r\n'
+        'BEGIN:VCARD\r\nVERSION:3.0\r\nUID:two\r\n'
+        'FN:Private Two\r\nEND:VCARD\r\n';
+    final contacts = parseVCardBundle(
+      bundle,
+      Uri.parse('https://local-export.invalid/openbubbles/'),
+    );
+    expect(contacts.length, 2);
+    expect(contacts.map((contact) => contact.stableId),
+        <String>['carddav-uid:one', 'carddav-uid:two']);
+  });
+
+  test('rejects a file without vCards', () {
+    expect(
+      () => parseVCardBundle(
+        'not a vcard',
+        Uri.parse('https://local-export.invalid/openbubbles/'),
+      ),
+      throwsFormatException,
+    );
+  });
 }

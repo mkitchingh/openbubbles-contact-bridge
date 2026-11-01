@@ -81,6 +81,24 @@ fails and removes the incomplete snapshot.
 
 ## Run the Google contact dry run
 
+### Easier validation without Google Cloud setup
+
+In Google Contacts, choose **Export**, select the contacts to test, and export
+as **vCard (for iOS Contacts)**. Close OpenBubbles, extract the complete Windows
+artifact, and double-click:
+
+```text
+Start-OpenBubblesVCardDryRun.cmd
+```
+
+Select the exported `.vcf` file and a destination for the redacted report. The
+bridge reads the vCards in memory and produces the same aggregate plan without
+OAuth or network access. Cards with a UID use the production stable-ID path;
+cards without one use a local href fallback and are identified separately in
+the report.
+
+### Automated CardDAV validation
+
 Create a Google **Desktop app** OAuth client and download its JSON as described
 in [`docs/GOOGLE_OAUTH.md`](docs/GOOGLE_OAUTH.md). Then extract the complete
 Windows artifact, close OpenBubbles including its tray icon, and double-click:
