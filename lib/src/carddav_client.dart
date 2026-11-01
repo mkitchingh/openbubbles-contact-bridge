@@ -257,8 +257,11 @@ class GoogleCardDavClient {
       '<d:prop>${properties.join()}</d:prop></d:propfind>';
 
   String? _firstHref(XmlDocument document, String property) => document
-      .findAllElements(property)
-      .expand((element) => element.findAllElements('href', namespace: 'DAV:'))
+      .descendants
+      .whereType<XmlElement>()
+      .where((element) => element.name.local == property)
+      .expand((element) => element.descendants.whereType<XmlElement>())
+      .where((element) => element.name.local == 'href')
       .map((element) => element.innerText.trim())
       .where((value) => value.isNotEmpty)
       .firstOrNull;
