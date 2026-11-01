@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:objectbox/objectbox.dart';
-
 import 'openbubbles_objectbox.g.dart';
 import 'openbubbles_objectbox_models.dart';
 

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:objectbox/objectbox.dart';
 import 'package:openbubbles_contact_bridge/src/database_inspector.dart';
 import 'package:openbubbles_contact_bridge/src/openbubbles_objectbox.g.dart';
 import 'package:openbubbles_contact_bridge/src/openbubbles_objectbox_models.dart';
