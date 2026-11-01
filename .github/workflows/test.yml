@@ -13,7 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1
-      - run: dart pub get
+        with:
+          sdk: 3.13.7
+      - name: Restore locked Dart dependencies
+        shell: powershell
+        run: |
+          dart pub get
+          git diff --exit-code -- pubspec.lock
       - name: Install pinned ObjectBox native library
         shell: bash
         run: |
@@ -38,7 +44,7 @@ jobs:
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
           Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
-          Copy-Item README.md, LICENSE, pubspec.lock build/package/
+          Copy-Item README.md, LICENSE build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{
               path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)

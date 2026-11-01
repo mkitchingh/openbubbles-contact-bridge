@@ -79,7 +79,7 @@ fails and removes the incomplete snapshot.
 
 ## Development
 
-Requires Dart 3.4 or newer.
+Reproducible builds use Dart 3.13.7 and the committed dependency lockfile.
 
 ```powershell
 dart pub get
