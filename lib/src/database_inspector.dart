@@ -57,7 +57,7 @@ Future<Map<String, Object?>> inspectSnapshot(Directory snapshotRoot) async {
     var sharedContacts = 0;
     var dismissedContacts = 0;
     for (final contact in contacts) {
-      final id = (contact.id ?? '').toString();
+      final id = contact.id;
       if (id.isEmpty) {
         emptyContactIds++;
       } else {
