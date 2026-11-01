@@ -14,6 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
       - run: dart pub get
+      - name: Install pinned ObjectBox native library
+        shell: bash
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/objectbox/objectbox-dart/v4.0.3/install.sh)
       - run: dart analyze --fatal-infos
       - run: dart test
       - name: Test Windows discovery

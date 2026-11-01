@@ -67,6 +67,43 @@ function Test-OBProcessRunning {
     @(Get-Process -Name 'bluebubbles_app' -ErrorAction SilentlyContinue).Count -gt 0
 }
 
+function New-OBInspectionSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$Package,
+        [Parameter(Mandatory)][object]$DatabaseCandidate,
+        [string]$DestinationRoot = (Join-Path $env:LOCALAPPDATA 'OpenBubblesContactBridge\Inspection')
+    )
+    if (Test-OBProcessRunning) {
+        throw 'OpenBubbles is running. Close it completely before creating an inspection snapshot.'
+    }
+    if (-not (Test-Path -LiteralPath $DatabaseCandidate.dataPath -PathType Leaf)) {
+        throw 'The selected ObjectBox data.mdb file no longer exists.'
+    }
+    $sourceHash = (Get-FileHash -LiteralPath $DatabaseCandidate.dataPath -Algorithm SHA256).Hash
+    $snapshotRoot = Join-Path $DestinationRoot ([Guid]::NewGuid().ToString('N'))
+    $databaseDestination = Join-Path $snapshotRoot 'objectbox'
+    New-Item -ItemType Directory -Path $snapshotRoot -Force | Out-Null
+    Copy-Item -LiteralPath $DatabaseCandidate.directory -Destination $databaseDestination -Recurse -Force
+    $copiedData = Join-Path $databaseDestination 'data.mdb'
+    if (-not (Test-Path -LiteralPath $copiedData -PathType Leaf)) {
+        throw 'Inspection snapshot verification failed: copied data.mdb is missing.'
+    }
+    $copiedHash = (Get-FileHash -LiteralPath $copiedData -Algorithm SHA256).Hash
+    if ($sourceHash -ne $copiedHash) {
+        throw 'Inspection snapshot verification failed: data.mdb hash mismatch.'
+    }
+    [pscustomobject][ordered]@{
+        markerVersion = 1
+        createdUtc = [DateTime]::UtcNow.ToString('o')
+        databaseRelativeDirectory = 'objectbox'
+        dataSha256 = $copiedHash
+        packageVersion = $Package.Version.ToString()
+        packageFamilyName = $Package.PackageFamilyName
+    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $snapshotRoot 'inspection-snapshot.json') -Encoding utf8
+    $snapshotRoot
+}
+
 function New-OBRedactedStatusReport {
     [CmdletBinding()]
     param(
@@ -141,6 +178,7 @@ function Show-OBProfilePicker {
 
 Export-ModuleMember -Function @(
     'Get-OBInstalledPackages', 'Get-OBProfileRoots', 'Get-OBDatabaseCandidates',
-    'Test-OBProcessRunning', 'New-OBRedactedStatusReport', 'Show-OBProfilePicker'
+    'Test-OBProcessRunning', 'New-OBInspectionSnapshot',
+    'New-OBRedactedStatusReport', 'Show-OBProfilePicker'
 )
 

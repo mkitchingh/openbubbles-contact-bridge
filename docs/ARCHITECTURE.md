@@ -22,6 +22,12 @@ The bridge therefore runs before OpenBubbles and follows this sequence:
 
 Steps 4-9 are not enabled in the first milestone.
 
+The database inspector never accepts an arbitrary database directory. It
+requires a bridge-created snapshot marker, a relative database path contained
+inside the snapshot, and a matching SHA-256 for `data.mdb`. ObjectBox may update
+metadata when a store is opened, so even inspection is performed only on the
+verified copy.
+
 ## Windows discovery
 
 Discovery is per-user and does not require elevation. It enumerates matching

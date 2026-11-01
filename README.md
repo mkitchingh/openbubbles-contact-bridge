@@ -22,6 +22,10 @@ The repository currently contains:
 The next milestone is the ObjectBox adapter. It will remain dry-run-only until
 the Store database schema has been validated against the public 1.x model.
 
+The adapter now includes schema-compatible read-only inspection logic, but it
+will only open a hash-verified snapshot created by the bridge. It refuses a live
+profile path or an unmarked database.
+
 ## Why a companion is necessary
 
 OpenBubbles 1.x parses desktop CardDAV vCards into contacts whose `id` is an
@@ -58,6 +62,13 @@ To create a consistent database backup while OpenBubbles is closed:
 
 ```powershell
 .\tools\Backup-OpenBubblesData.ps1
+```
+
+To create the smaller, hash-verified ObjectBox snapshot accepted by the local
+inspector:
+
+```powershell
+.\tools\New-OpenBubblesInspectionSnapshot.ps1
 ```
 
 ## Development
