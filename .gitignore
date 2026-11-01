@@ -7,4 +7,6 @@ coverage/
 .idea/
 .vscode/
 /lib/objectbox.dll
+oauth-client*.json
+!oauth-client.example.json
 

@@ -1,5 +1,12 @@
 $ErrorActionPreference = 'Stop'
-$module = Join-Path (Split-Path $PSScriptRoot -Parent) 'tools\OpenBubbles.Discovery.psm1'
+$repositoryRoot = Split-Path $PSScriptRoot -Parent
+$module = Join-Path $repositoryRoot 'tools\OpenBubbles.Discovery.psm1'
+$tokens = $null
+foreach ($script in @(Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'tools') -Include '*.ps1', '*.psm1' -File -Recurse)) {
+    $parseErrors = $null
+    [void][Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$parseErrors)
+    if (@($parseErrors).Count -ne 0) { throw "PowerShell parser rejected $($script.Name): $($parseErrors[0].Message)" }
+}
 Import-Module $module -Force
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("ob-bridge-test-" + [Guid]::NewGuid().ToString('N'))
 try {

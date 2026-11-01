@@ -10,7 +10,20 @@ const objectBoxModelFingerprint =
 const objectBoxModelSourceVersion = 'OpenBubbles 1.15.0';
 const inspectionMarkerName = 'inspection-snapshot.json';
 
-Future<Map<String, Object?>> inspectSnapshot(Directory snapshotRoot) async {
+class VerifiedInspectionSnapshot {
+  const VerifiedInspectionSnapshot({
+    required this.database,
+    required this.databaseBytes,
+    required this.packageVersion,
+  });
+
+  final Directory database;
+  final int databaseBytes;
+  final Object? packageVersion;
+}
+
+Future<VerifiedInspectionSnapshot> verifyInspectionSnapshot(
+    Directory snapshotRoot) async {
   final root = Directory(snapshotRoot.resolveSymbolicLinksSync());
   final markerFile = File('${root.path}${Platform.pathSeparator}$inspectionMarkerName');
   if (!markerFile.existsSync()) {
@@ -45,7 +58,16 @@ Future<Map<String, Object?>> inspectSnapshot(Directory snapshotRoot) async {
     throw StateError('Snapshot hash verification failed.');
   }
 
-  final store = Store(getObjectBoxModel(), directory: resolvedDatabase);
+  return VerifiedInspectionSnapshot(
+    database: Directory(resolvedDatabase),
+    databaseBytes: dataFile.lengthSync(),
+    packageVersion: decoded['packageVersion'],
+  );
+}
+
+Future<Map<String, Object?>> inspectSnapshot(Directory snapshotRoot) async {
+  final verified = await verifyInspectionSnapshot(snapshotRoot);
+  final store = Store(getObjectBoxModel(), directory: verified.database.path);
   try {
     final contactBox = store.box<Contact>();
     final handleBox = store.box<Handle>();
@@ -76,8 +98,8 @@ Future<Map<String, Object?>> inspectSnapshot(Directory snapshotRoot) async {
       'reportVersion': 1,
       'modelSourceVersion': objectBoxModelSourceVersion,
       'modelFingerprint': objectBoxModelFingerprint,
-      'packageVersion': decoded['packageVersion'],
-      'databaseBytes': dataFile.lengthSync(),
+      'packageVersion': verified.packageVersion,
+      'databaseBytes': verified.databaseBytes,
       'entities': <String, int>{
         'attachments': store.box<Attachment>().count(),
         'chats': store.box<Chat>().count(),

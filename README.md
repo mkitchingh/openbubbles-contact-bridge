@@ -19,11 +19,13 @@ The repository currently contains:
 - a Windows setup wizard that discovers packages and profiles dynamically and
   produces a redacted diagnostic through native dialog boxes;
 - a schema-compatible, count-only ObjectBox inspector that can open only a
-  hash-verified temporary snapshot, never the live Store database.
+  hash-verified temporary snapshot, never the live Store database;
+- a separate Google desktop OAuth/CardDAV dry-run planner that downloads
+  vCards into memory and emits only aggregate repair counts.
 
-The next milestone is validating that read-only report against real Store data.
-Any future repair adapter will remain dry-run-only until the Store database
-schema and invariants have been validated against the public 1.x model.
+The Store schema has now been validated read-only against a real 1.x profile.
+The next safety gate is validating the Google dry-run report. No repair writes
+are enabled.
 
 ## Why a companion is necessary
 
@@ -76,6 +78,21 @@ and verifies a snapshot, runs the compiled inspector, saves a redacted
 count-only report, and removes the temporary database copy automatically. If
 the app starts or the source database changes during the copy, the operation
 fails and removes the incomplete snapshot.
+
+## Run the Google contact dry run
+
+Create a Google **Desktop app** OAuth client and download its JSON as described
+in [`docs/GOOGLE_OAUTH.md`](docs/GOOGLE_OAUTH.md). Then extract the complete
+Windows artifact, close OpenBubbles including its tray icon, and double-click:
+
+```text
+Start-OpenBubblesGoogleDryRun.cmd
+```
+
+The wizard asks for the OAuth JSON and report destination, opens the system
+browser for Google consent, fetches CardDAV vCards into memory, and calculates
+aggregate repair counts against a verified database snapshot. It does not save
+tokens or vCards and cannot modify the live or copied database.
 
 ## Development
 
