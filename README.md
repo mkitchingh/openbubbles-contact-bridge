@@ -15,16 +15,15 @@ The repository currently contains:
 - a read-only Windows diagnostic that locates the Store profile and ObjectBox
   files without printing credentials or message data;
 - a backup helper that refuses to run while OpenBubbles is open;
-- Windows CI that analyzes and tests the reconciliation engine.
+- Windows CI that analyzes and tests the reconciliation engine;
 - a Windows setup wizard that discovers packages and profiles dynamically and
-  produces a redacted diagnostic through native dialog boxes.
+  produces a redacted diagnostic through native dialog boxes;
+- a schema-compatible, count-only ObjectBox inspector that can open only a
+  hash-verified temporary snapshot, never the live Store database.
 
-The next milestone is the ObjectBox adapter. It will remain dry-run-only until
-the Store database schema has been validated against the public 1.x model.
-
-The adapter now includes schema-compatible read-only inspection logic, but it
-will only open a hash-verified snapshot created by the bridge. It refuses a live
-profile path or an unmarked database.
+The next milestone is validating that read-only report against real Store data.
+Any future repair adapter will remain dry-run-only until the Store database
+schema and invariants have been validated against the public 1.x model.
 
 ## Why a companion is necessary
 
@@ -72,9 +71,11 @@ inspector:
 ```
 
 End users should download the `OpenBubbles-Contact-Bridge-Windows` workflow
-artifact and double-click `Start-OpenBubblesDatabaseInspection.cmd`. It creates the
-snapshot, runs the compiled inspector, saves a redacted count-only report, and
-removes the temporary database copy automatically.
+artifact and double-click `Start-OpenBubblesDatabaseInspection.cmd`. It creates
+and verifies a snapshot, runs the compiled inspector, saves a redacted
+count-only report, and removes the temporary database copy automatically. If
+the app starts or the source database changes during the copy, the operation
+fails and removes the incomplete snapshot.
 
 ## Development
 

@@ -83,25 +83,39 @@ function New-OBInspectionSnapshot {
     $sourceHash = (Get-FileHash -LiteralPath $DatabaseCandidate.dataPath -Algorithm SHA256).Hash
     $snapshotRoot = Join-Path $DestinationRoot ([Guid]::NewGuid().ToString('N'))
     $databaseDestination = Join-Path $snapshotRoot 'objectbox'
-    New-Item -ItemType Directory -Path $snapshotRoot -Force | Out-Null
-    Copy-Item -LiteralPath $DatabaseCandidate.directory -Destination $databaseDestination -Recurse -Force
-    $copiedData = Join-Path $databaseDestination 'data.mdb'
-    if (-not (Test-Path -LiteralPath $copiedData -PathType Leaf)) {
-        throw 'Inspection snapshot verification failed: copied data.mdb is missing.'
+    try {
+        New-Item -ItemType Directory -Path $snapshotRoot -Force | Out-Null
+        Copy-Item -LiteralPath $DatabaseCandidate.directory -Destination $databaseDestination -Recurse -Force
+        if (Test-OBProcessRunning) {
+            throw 'OpenBubbles started while the snapshot was being created. The incomplete snapshot was removed.'
+        }
+        $sourceHashAfterCopy = (Get-FileHash -LiteralPath $DatabaseCandidate.dataPath -Algorithm SHA256).Hash
+        if ($sourceHash -ne $sourceHashAfterCopy) {
+            throw 'The OpenBubbles database changed while it was being copied. The incomplete snapshot was removed.'
+        }
+        $copiedData = Join-Path $databaseDestination 'data.mdb'
+        if (-not (Test-Path -LiteralPath $copiedData -PathType Leaf)) {
+            throw 'Inspection snapshot verification failed: copied data.mdb is missing.'
+        }
+        $copiedHash = (Get-FileHash -LiteralPath $copiedData -Algorithm SHA256).Hash
+        if ($sourceHash -ne $copiedHash) {
+            throw 'Inspection snapshot verification failed: data.mdb hash mismatch.'
+        }
+        [pscustomobject][ordered]@{
+            markerVersion = 1
+            createdUtc = [DateTime]::UtcNow.ToString('o')
+            databaseRelativeDirectory = 'objectbox'
+            dataSha256 = $copiedHash
+            packageVersion = $Package.Version.ToString()
+            packageFamilyName = $Package.PackageFamilyName
+        } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $snapshotRoot 'inspection-snapshot.json') -Encoding utf8
+        $snapshotRoot
+    } catch {
+        if (Test-Path -LiteralPath $snapshotRoot -PathType Container) {
+            Remove-Item -LiteralPath $snapshotRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        throw
     }
-    $copiedHash = (Get-FileHash -LiteralPath $copiedData -Algorithm SHA256).Hash
-    if ($sourceHash -ne $copiedHash) {
-        throw 'Inspection snapshot verification failed: data.mdb hash mismatch.'
-    }
-    [pscustomobject][ordered]@{
-        markerVersion = 1
-        createdUtc = [DateTime]::UtcNow.ToString('o')
-        databaseRelativeDirectory = 'objectbox'
-        dataSha256 = $copiedHash
-        packageVersion = $Package.Version.ToString()
-        packageFamilyName = $Package.PackageFamilyName
-    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $snapshotRoot 'inspection-snapshot.json') -Encoding utf8
-    $snapshotRoot
 }
 
 function Remove-OBInspectionSnapshot {
