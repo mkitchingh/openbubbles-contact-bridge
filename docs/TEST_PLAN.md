@@ -17,6 +17,11 @@
 - compiled Windows inspector against a real temporary ObjectBox database
 - report scan proving planted contact, phone, and email values are absent
 - packaged-file SHA-256 manifest generation
+- Google OAuth desktop-client configuration validation
+- CardDAV HTTPS discovery and off-domain redirect refusal
+- Google vCard parsing with UID and href identity paths
+- dry-run duplicate-ID rejection and count-only privacy assertions
+- packaged Google dry-run executable against a real ObjectBox fixture
 
 ## Store-build validation (read-only)
 

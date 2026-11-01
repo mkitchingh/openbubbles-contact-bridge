@@ -20,7 +20,8 @@ The bridge therefore runs before OpenBubbles and follows this sequence:
 8. Re-open the database read-only and verify row/relation invariants.
 9. Launch the original Store app through its registered application ID.
 
-Steps 4-9 are not enabled in the first milestone.
+Steps 5-6 are enabled only for a count-only dry run against a verified snapshot.
+Steps 4 and 7-9 remain disabled for repair operations.
 
 The database inspector never accepts an arbitrary database directory. It
 requires a bridge-created snapshot marker, a relative database path contained
@@ -71,4 +72,9 @@ A public desktop application cannot keep an OAuth client secret confidential.
 The production bridge should use its own Google OAuth project and consent screen,
 store refresh credentials with Windows Credential Manager/DPAPI, and request only
 the CardDAV scope. Reusing OpenBubbles' OAuth client is intentionally out of scope.
+
+The current dry run accepts a Google Desktop app client JSON at runtime, uses a
+random IPv4 loopback listener with state and PKCE, and requests only the CardDAV
+scope. Access tokens and vCards remain in memory for one run. A production
+release needs its own consent screen and any verification Google requires.
 

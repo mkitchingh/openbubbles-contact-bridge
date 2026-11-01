@@ -35,6 +35,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path build/package -Force | Out-Null
           dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
+          dart compile exe bin/plan_google_contacts.dart -o build/package/openbubbles-google-dry-run.exe
       - name: Assemble Windows artifact
         shell: powershell
         run: |
@@ -43,8 +44,10 @@ jobs:
           Copy-Item lib/objectbox.dll build/package/lib/objectbox.dll
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
           Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
+          Copy-Item tools/Start-OpenBubblesGoogleDryRun.ps1 build/package/tools/Start-OpenBubblesGoogleDryRun.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
-          Copy-Item README.md, LICENSE build/package/
+          Copy-Item Start-OpenBubblesGoogleDryRun.cmd build/package/Start-OpenBubblesGoogleDryRun.cmd
+          Copy-Item README.md, LICENSE, oauth-client.example.json build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{
               path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)
@@ -78,6 +81,35 @@ jobs:
           $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000')
           foreach ($value in $forbidden) {
             if ($reportText.Contains($value)) { throw "Report leaked fixture value: $value" }
+          }
+      - name: Test packaged Google dry-run planner end to end
+        shell: powershell
+        run: |
+          $snapshot = Join-Path $PWD 'build/google-e2e-snapshot'
+          $vcards = Join-Path $PWD 'build/google-e2e-vcards'
+          $reportPath = Join-Path $PWD 'build/google-e2e-report.json'
+          dart run tool/create_inspection_fixture.dart $snapshot
+          dart run tool/create_vcard_fixture.dart $vcards
+          Push-Location build/package
+          try {
+            & ./openbubbles-google-dry-run.exe --snapshot $snapshot --vcard-directory $vcards --output $reportPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged dry-run planner exited with code $LASTEXITCODE"
+            }
+          } finally {
+            Pop-Location
+          }
+          $reportText = Get-Content -LiteralPath $reportPath -Raw
+          $report = $reportText | ConvertFrom-Json
+          if ($report.mode -ne 'dry-run') { throw 'Unexpected report mode' }
+          if ($report.writesPerformed -ne $false) { throw 'Dry run reported writes' }
+          if ($report.source.uniqueStableIds -ne 2) { throw 'Unexpected source contact count' }
+          if ($report.plan.insertStableContacts -ne 1) { throw 'Unexpected insert count' }
+          if ($report.plan.removeEmptyNonSharedContacts -ne 1) { throw 'Unexpected removal count' }
+          if ($report.plan.uniqueHandleMatches -ne 1) { throw 'Unexpected handle match count' }
+          $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000', 'aot-new-contact')
+          foreach ($value in $forbidden) {
+            if ($reportText.Contains($value)) { throw "Dry-run report leaked fixture value: $value" }
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
