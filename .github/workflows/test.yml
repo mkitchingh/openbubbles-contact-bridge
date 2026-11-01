@@ -11,12 +11,14 @@ jobs:
   dart:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1
       - run: dart pub get
       - name: Install pinned ObjectBox native library
         shell: bash
-        run: bash <(curl -fsSL https://raw.githubusercontent.com/objectbox/objectbox-dart/v4.0.3/install.sh)
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/objectbox/objectbox-c/ae135a53ed39d70b23f435e0a1329305c669ab51/download.sh) --quiet 4.0.2
+          echo 'bf80de14fa92af47746322bf6f9704d3b157680535ad9fc413e8a02ccf32f6a8  lib/objectbox.dll' | sha256sum --check --strict
       - run: dart analyze --fatal-infos
       - run: dart test
       - name: Test Windows discovery
@@ -36,7 +38,7 @@ jobs:
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
           Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
-          Copy-Item README.md, LICENSE build/package/
+          Copy-Item README.md, LICENSE, pubspec.lock build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{
               path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)
@@ -71,7 +73,7 @@ jobs:
           foreach ($value in $forbidden) {
             if ($reportText.Contains($value)) { throw "Report leaked fixture value: $value" }
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: OpenBubbles-Contact-Bridge-Windows
           path: build/package
