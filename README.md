@@ -16,6 +16,8 @@ The repository currently contains:
   files without printing credentials or message data;
 - a backup helper that refuses to run while OpenBubbles is open;
 - Windows CI that analyzes and tests the reconciliation engine.
+- a Windows setup wizard that discovers packages and profiles dynamically and
+  produces a redacted diagnostic through native dialog boxes.
 
 The next milestone is the ObjectBox adapter. It will remain dry-run-only until
 the Store database schema has been validated against the public 1.x model.
@@ -40,6 +42,12 @@ Open PowerShell (not as Administrator), clone this repository, and run:
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\tools\Get-OpenBubblesStatus.ps1
+```
+
+For the guided Windows experience, including profile selection and a Save dialog:
+
+```powershell
+.\tools\Start-OpenBubblesBridgeSetup.ps1
 ```
 
 The report contains paths, file sizes, schema fingerprints, and process state.

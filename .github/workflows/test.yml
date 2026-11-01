@@ -16,3 +16,6 @@ jobs:
       - run: dart pub get
       - run: dart analyze --fatal-infos
       - run: dart test
+      - name: Test Windows discovery
+        shell: pwsh
+        run: ./test/Discovery.SelfTest.ps1

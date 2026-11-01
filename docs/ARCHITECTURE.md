@@ -22,6 +22,15 @@ The bridge therefore runs before OpenBubbles and follows this sequence:
 
 Steps 4-9 are not enabled in the first milestone.
 
+## Windows discovery
+
+Discovery is per-user and does not require elevation. It enumerates matching
+AppX packages, derives each package data root from `LOCALAPPDATA` and the package
+family name, checks known profile layouts, and falls back to locating the
+Flutter preferences file. ObjectBox candidates are recognized by `data.mdb`
+rather than a fixed relative directory. If multiple profiles are found, the
+wizard asks the user to choose instead of guessing.
+
 ## Stable identity
 
 The stable key is:
