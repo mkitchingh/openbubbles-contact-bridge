@@ -120,7 +120,7 @@ function Show-OBProfilePicker {
     $list = New-Object Windows.Forms.ListBox
     $list.Location = New-Object Drawing.Point(16, 48)
     $list.Size = New-Object Drawing.Size(670, 220)
-    foreach ($profile in $Profiles) { [void]$list.Items.Add("$($profile.package.Version) — $($profile.profileRoot)") }
+    foreach ($profile in $Profiles) { [void]$list.Items.Add("$($profile.package.Version) - $($profile.profileRoot)") }
     $list.SelectedIndex = 0
     $form.Controls.Add($list)
     $ok = New-Object Windows.Forms.Button
