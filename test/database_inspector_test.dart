@@ -59,12 +59,33 @@ void main() {
     expect(encoded, isNot(contains('Must Not Leak')));
     expect(encoded, isNot(contains('private@example.test')));
     expect(encoded, isNot(contains('+15550102000')));
+
+    await File('${root.path}${Platform.pathSeparator}$inspectionMarkerName')
+        .writeAsString(jsonEncode(<String, Object?>{
+      'markerVersion': 1,
+      'databaseRelativeDirectory': 'objectbox',
+      'dataSha256': '00',
+      'packageVersion': 'fixture',
+    }));
+    await expectLater(inspectSnapshot(root), throwsStateError);
   });
 
   test('refuses an unmarked database', () async {
     final root = await Directory.systemTemp.createTemp('ob-bridge-unmarked-');
     addTearDown(() => root.delete(recursive: true));
-    expect(() => inspectSnapshot(root), throwsStateError);
+    await expectLater(inspectSnapshot(root), throwsStateError);
+  });
+
+  test('refuses a marker path that can escape its snapshot', () async {
+    final root = await Directory.systemTemp.createTemp('ob-bridge-unsafe-path-');
+    addTearDown(() => root.delete(recursive: true));
+    await File('${root.path}${Platform.pathSeparator}$inspectionMarkerName')
+        .writeAsString(jsonEncode(<String, Object?>{
+      'markerVersion': 1,
+      'databaseRelativeDirectory': '..${Platform.pathSeparator}outside',
+      'dataSha256': '00',
+    }));
+    await expectLater(inspectSnapshot(root), throwsStateError);
   });
 }
 

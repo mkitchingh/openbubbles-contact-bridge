@@ -32,6 +32,23 @@ try {
     if ($marker.dataSha256 -ne (Get-FileHash -LiteralPath $snapshotData -Algorithm SHA256).Hash) { throw 'Snapshot hash self-test failed.' }
     Remove-OBInspectionSnapshot -SnapshotRoot $snapshot -DestinationRoot $snapshotRoot
     if (Test-Path -LiteralPath $snapshot) { throw 'Snapshot cleanup self-test failed.' }
+
+    $unmarked = Join-Path $snapshotRoot 'unmarked'
+    New-Item -ItemType Directory -Path $unmarked -Force | Out-Null
+    $unmarkedRefused = $false
+    try { Remove-OBInspectionSnapshot -SnapshotRoot $unmarked -DestinationRoot $snapshotRoot } catch { $unmarkedRefused = $true }
+    if (-not $unmarkedRefused -or -not (Test-Path -LiteralPath $unmarked -PathType Container)) {
+        throw 'Unmarked snapshot cleanup guard self-test failed.'
+    }
+
+    $outside = Join-Path $temp 'outside-marked'
+    New-Item -ItemType Directory -Path $outside -Force | Out-Null
+    Set-Content -LiteralPath (Join-Path $outside 'inspection-snapshot.json') -Encoding utf8 -Value '{}'
+    $outsideRefused = $false
+    try { Remove-OBInspectionSnapshot -SnapshotRoot $outside -DestinationRoot $snapshotRoot } catch { $outsideRefused = $true }
+    if (-not $outsideRefused -or -not (Test-Path -LiteralPath $outside -PathType Container)) {
+        throw 'Outside snapshot cleanup guard self-test failed.'
+    }
     Write-Host 'Windows discovery self-test passed.'
 } finally {
     if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }
