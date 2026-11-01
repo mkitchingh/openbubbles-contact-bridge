@@ -286,7 +286,7 @@ Future<List<T>> _mapConcurrent<S, T>(
     }
   }
 
-  await Future.wait(List<void>.generate(
+  await Future.wait(List<Future<void>>.generate(
     concurrency.clamp(1, values.length).toInt(),
     (_) => worker(),
   ));

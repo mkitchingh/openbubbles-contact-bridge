@@ -114,7 +114,7 @@ class GoogleDesktopOAuth {
       if (code == null || code.isEmpty) {
         throw StateError('Google authorization returned no code.');
       }
-      return _exchangeCode(code, verifier, redirectUri);
+      return await _exchangeCode(code, verifier, redirectUri);
     } finally {
       await subscription.cancel();
       await server.close(force: true);
