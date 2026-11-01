@@ -16,6 +16,24 @@ class FetchedContact {
   final bool usedUid;
 }
 
+List<FetchedContact> parseVCardBundle(String source, Uri baseHref) {
+  final matches = RegExp(
+    r'BEGIN:VCARD(?:\r?\n|\r).*?END:VCARD(?:\r?\n|\r|$)',
+    caseSensitive: false,
+    dotAll: true,
+  ).allMatches(source).toList(growable: false);
+  if (matches.isEmpty) {
+    throw const FormatException('The selected file contains no vCards.');
+  }
+  return <FetchedContact>[
+    for (var index = 0; index < matches.length; index++)
+      parseVCard(
+        matches[index].group(0)!,
+        baseHref.resolve('contact-$index.vcf'),
+      ),
+  ];
+}
+
 FetchedContact parseVCard(String source, Uri href) {
   final unfolded = source.replaceAll(RegExp(r'\r?\n[ \t]'), '');
   final values = <String, List<String>>{};

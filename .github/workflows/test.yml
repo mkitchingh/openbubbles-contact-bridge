@@ -45,8 +45,10 @@ jobs:
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
           Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
           Copy-Item tools/Start-OpenBubblesGoogleDryRun.ps1 build/package/tools/Start-OpenBubblesGoogleDryRun.ps1
+          Copy-Item tools/Start-OpenBubblesVCardDryRun.ps1 build/package/tools/Start-OpenBubblesVCardDryRun.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
           Copy-Item Start-OpenBubblesGoogleDryRun.cmd build/package/Start-OpenBubblesGoogleDryRun.cmd
+          Copy-Item Start-OpenBubblesVCardDryRun.cmd build/package/Start-OpenBubblesVCardDryRun.cmd
           Copy-Item README.md, LICENSE, oauth-client.example.json build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
             [pscustomobject]@{
@@ -110,6 +112,34 @@ jobs:
           $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000', 'aot-new-contact')
           foreach ($value in $forbidden) {
             if ($reportText.Contains($value)) { throw "Dry-run report leaked fixture value: $value" }
+          }
+      - name: Test packaged vCard-export dry-run end to end
+        shell: powershell
+        run: |
+          $snapshot = Join-Path $PWD 'build/vcard-e2e-snapshot'
+          $vcardFile = Join-Path $PWD 'build/google-contacts-export.vcf'
+          $reportPath = Join-Path $PWD 'build/vcard-e2e-report.json'
+          dart run tool/create_inspection_fixture.dart $snapshot
+          dart run tool/create_vcard_bundle_fixture.dart $vcardFile
+          Push-Location build/package
+          try {
+            & ./openbubbles-google-dry-run.exe --snapshot $snapshot --vcard-file $vcardFile --output $reportPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged vCard dry-run planner exited with code $LASTEXITCODE"
+            }
+          } finally {
+            Pop-Location
+          }
+          $reportText = Get-Content -LiteralPath $reportPath -Raw
+          $report = $reportText | ConvertFrom-Json
+          if ($report.mode -ne 'dry-run') { throw 'Unexpected report mode' }
+          if ($report.writesPerformed -ne $false) { throw 'vCard dry run reported writes' }
+          if ($report.source.vcards -ne 2) { throw 'Unexpected vCard bundle count' }
+          if ($report.plan.insertStableContacts -ne 1) { throw 'Unexpected vCard insert count' }
+          if ($report.plan.uniqueHandleMatches -ne 1) { throw 'Unexpected vCard handle match count' }
+          $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000', 'aot-new-contact')
+          foreach ($value in $forbidden) {
+            if ($reportText.Contains($value)) { throw "vCard dry-run report leaked fixture value: $value" }
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

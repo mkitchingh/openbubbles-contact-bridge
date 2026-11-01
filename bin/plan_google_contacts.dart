@@ -15,7 +15,9 @@ Future<void> main(List<String> arguments) async {
   }
   try {
     final source = options.vcardDirectory == null
-        ? await _fetchGoogle(options.oauthConfig!)
+        ? options.vcardFile == null
+            ? await _fetchGoogle(options.oauthConfig!)
+            : await _readVCardFile(options.vcardFile!)
         : await _readFixtureVcards(options.vcardDirectory!);
     final report = await planDryRun(Directory(options.snapshot), source);
     const encoder = JsonEncoder.withIndent('  ');
@@ -76,6 +78,27 @@ Future<CardDavSourceSummary> _readFixtureVcards(String directoryPath) async {
   );
 }
 
+Future<CardDavSourceSummary> _readVCardFile(String filePath) async {
+  final file = File(filePath);
+  if (!file.existsSync()) {
+    throw StateError('The selected vCard file does not exist.');
+  }
+  List<FetchedContact> contacts;
+  try {
+    contacts = parseVCardBundle(
+      await file.readAsString(),
+      Uri.parse('https://local-export.invalid/openbubbles/'),
+    );
+  } on FormatException {
+    throw StateError('The selected file contains no valid vCards.');
+  }
+  return CardDavSourceSummary(
+    addressBookCount: 1,
+    vcardCount: contacts.length,
+    contacts: contacts,
+  );
+}
+
 String _safeError(Object error) {
   if (error is StateError) return error.message;
   if (error is TimeoutException) return error.message ?? 'Operation timed out.';
@@ -89,6 +112,7 @@ _Options? _parseArguments(List<String> arguments) {
   String? output;
   String? oauthConfig;
   String? vcardDirectory;
+  String? vcardFile;
   for (var index = 0; index < arguments.length; index++) {
     final option = arguments[index];
     if (index + 1 >= arguments.length) {
@@ -109,6 +133,9 @@ _Options? _parseArguments(List<String> arguments) {
       case '--vcard-directory':
         vcardDirectory = value;
         break;
+      case '--vcard-file':
+        vcardFile = value;
+        break;
       default:
         stderr.writeln('Unknown argument: $option');
         return null;
@@ -118,9 +145,12 @@ _Options? _parseArguments(List<String> arguments) {
     stderr.writeln('Required: --snapshot <directory> --output <json>');
     return null;
   }
-  if ((oauthConfig == null) == (vcardDirectory == null)) {
+  final sources = <String?>[oauthConfig, vcardDirectory, vcardFile]
+      .where((value) => value != null)
+      .length;
+  if (sources != 1) {
     stderr.writeln(
-        'Choose exactly one source: --oauth-config or --vcard-directory');
+        'Choose exactly one source: --oauth-config, --vcard-file, or --vcard-directory');
     return null;
   }
   return _Options(
@@ -128,6 +158,7 @@ _Options? _parseArguments(List<String> arguments) {
     output: output,
     oauthConfig: oauthConfig,
     vcardDirectory: vcardDirectory,
+    vcardFile: vcardFile,
   );
 }
 
@@ -137,9 +168,11 @@ class _Options {
     required this.output,
     required this.oauthConfig,
     required this.vcardDirectory,
+    required this.vcardFile,
   });
   final String snapshot;
   final String output;
   final String? oauthConfig;
   final String? vcardDirectory;
+  final String? vcardFile;
 }
