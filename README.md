@@ -71,6 +71,11 @@ inspector:
 .\tools\New-OpenBubblesInspectionSnapshot.ps1
 ```
 
+End users should download the `OpenBubbles-Contact-Bridge-Windows` workflow
+artifact and run `Start-OpenBubblesDatabaseInspection.ps1`. It creates the
+snapshot, runs the compiled inspector, saves a redacted count-only report, and
+removes the temporary database copy automatically.
+
 ## Development
 
 Requires Dart 3.4 or newer.

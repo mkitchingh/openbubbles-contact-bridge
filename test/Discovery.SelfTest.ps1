@@ -30,6 +30,8 @@ try {
     $snapshotData = Join-Path $snapshot 'objectbox\data.mdb'
     if (-not (Test-Path -LiteralPath $snapshotData -PathType Leaf)) { throw 'Snapshot copy self-test failed.' }
     if ($marker.dataSha256 -ne (Get-FileHash -LiteralPath $snapshotData -Algorithm SHA256).Hash) { throw 'Snapshot hash self-test failed.' }
+    Remove-OBInspectionSnapshot -SnapshotRoot $snapshot -DestinationRoot $snapshotRoot
+    if (Test-Path -LiteralPath $snapshot) { throw 'Snapshot cleanup self-test failed.' }
     Write-Host 'Windows discovery self-test passed.'
 } finally {
     if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force }

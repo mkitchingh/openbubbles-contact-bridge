@@ -22,3 +22,27 @@ jobs:
       - name: Test Windows discovery
         shell: powershell
         run: ./test/Discovery.SelfTest.ps1
+      - name: Compile Windows inspector
+        run: dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
+      - name: Assemble Windows artifact
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path build/package/lib -Force | Out-Null
+          New-Item -ItemType Directory -Path build/package/tools -Force | Out-Null
+          Copy-Item lib/objectbox.dll build/package/lib/objectbox.dll
+          Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
+          Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/Start-OpenBubblesDatabaseInspection.ps1
+          Copy-Item README.md, LICENSE build/package/
+          Get-ChildItem build/package -Recurse -File | ForEach-Object {
+            [pscustomobject]@{
+              path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)
+              size = $_.Length
+              sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+            }
+          } | ConvertTo-Json | Set-Content build/package/manifest.json -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenBubbles-Contact-Bridge-Windows
+          path: build/package
+          if-no-files-found: error
+          retention-days: 14

@@ -104,6 +104,24 @@ function New-OBInspectionSnapshot {
     $snapshotRoot
 }
 
+function Remove-OBInspectionSnapshot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SnapshotRoot,
+        [string]$DestinationRoot = (Join-Path $env:LOCALAPPDATA 'OpenBubblesContactBridge\Inspection')
+    )
+    if (-not (Test-Path -LiteralPath $SnapshotRoot -PathType Container)) { return }
+    $resolvedRoot = (Resolve-Path -LiteralPath $DestinationRoot).Path.TrimEnd('\') + '\'
+    $resolvedSnapshot = (Resolve-Path -LiteralPath $SnapshotRoot).Path.TrimEnd('\') + '\'
+    if (-not $resolvedSnapshot.StartsWith($resolvedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Refusing to remove a snapshot outside the bridge inspection directory.'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $SnapshotRoot 'inspection-snapshot.json') -PathType Leaf)) {
+        throw 'Refusing to remove an unmarked directory.'
+    }
+    Remove-Item -LiteralPath $SnapshotRoot -Recurse -Force
+}
+
 function New-OBRedactedStatusReport {
     [CmdletBinding()]
     param(
@@ -178,7 +196,7 @@ function Show-OBProfilePicker {
 
 Export-ModuleMember -Function @(
     'Get-OBInstalledPackages', 'Get-OBProfileRoots', 'Get-OBDatabaseCandidates',
-    'Test-OBProcessRunning', 'New-OBInspectionSnapshot',
+    'Test-OBProcessRunning', 'New-OBInspectionSnapshot', 'Remove-OBInspectionSnapshot',
     'New-OBRedactedStatusReport', 'Show-OBProfilePicker'
 )
 
