@@ -95,6 +95,48 @@ void main() {
     );
     await expectLater(client.fetchAll(), throwsStateError);
   });
+
+  test('translates a missing CardDAV grant without exposing response data', () async {
+    final client = GoogleCardDavClient(
+      accessToken: 'private-token',
+      transport: (method, uri, body, headers) async =>
+          const CardDavTransportResponse(
+        statusCode: 403,
+        headers: <String, String>{
+          'www-authenticate': 'Bearer error="insufficient_scope"',
+        },
+        body: '{"private":"must-not-leak"}',
+      ),
+    );
+    await expectLater(
+      client.fetchAll(),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        allOf(contains('CardDAV scope'), isNot(contains('must-not-leak'))),
+      )),
+    );
+  });
+
+  test('translates a disabled People API response', () async {
+    final client = GoogleCardDavClient(
+      accessToken: 'private-token',
+      transport: (method, uri, body, headers) async =>
+          const CardDavTransportResponse(
+        statusCode: 403,
+        headers: <String, String>{},
+        body: '{"status":"SERVICE_DISABLED","private":"must-not-leak"}',
+      ),
+    );
+    await expectLater(
+      client.fetchAll(),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        allOf(contains('People API'), isNot(contains('must-not-leak'))),
+      )),
+    );
+  });
 }
 
 String _multistatus(String body) =>

@@ -76,6 +76,8 @@ class GoogleDesktopOAuth {
         'code_challenge': challenge,
         'code_challenge_method': 'S256',
         'access_type': 'online',
+        'include_granted_scopes': 'true',
+        'prompt': 'consent',
       },
     );
 
@@ -150,6 +152,13 @@ class GoogleDesktopOAuth {
     final token = decoded is Map<String, dynamic> ? decoded['access_token'] : null;
     if (token is! String || token.isEmpty) {
       throw StateError('Google token exchange returned no access token.');
+    }
+    final grantedScopes = decoded['scope'];
+    if (grantedScopes is String &&
+        !grantedScopes.split(RegExp(r'\s+')).contains(cardDavScope)) {
+      throw StateError(
+          'Google authorized the app but did not grant the CardDAV scope. '
+          'Confirm the scope under Google Auth Platform > Data Access.');
     }
     return token;
   }
