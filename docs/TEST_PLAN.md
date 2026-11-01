@@ -13,6 +13,10 @@
 - preservation of shared contacts
 - unique handle matching
 - no mutation for ambiguous handle matches
+- PowerShell 5.1 package, profile, database, snapshot, and cleanup discovery
+- compiled Windows inspector against a real temporary ObjectBox database
+- report scan proving planted contact, phone, and email values are absent
+- packaged-file SHA-256 manifest generation
 
 ## Store-build validation (read-only)
 

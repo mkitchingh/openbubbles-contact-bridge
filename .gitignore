@@ -6,4 +6,5 @@ coverage/
 *.zip
 .idea/
 .vscode/
+/lib/objectbox.dll
 

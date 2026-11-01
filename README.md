@@ -15,12 +15,15 @@ The repository currently contains:
 - a read-only Windows diagnostic that locates the Store profile and ObjectBox
   files without printing credentials or message data;
 - a backup helper that refuses to run while OpenBubbles is open;
-- Windows CI that analyzes and tests the reconciliation engine.
+- Windows CI that analyzes and tests the reconciliation engine;
 - a Windows setup wizard that discovers packages and profiles dynamically and
-  produces a redacted diagnostic through native dialog boxes.
+  produces a redacted diagnostic through native dialog boxes;
+- a schema-compatible, count-only ObjectBox inspector that can open only a
+  hash-verified temporary snapshot, never the live Store database.
 
-The next milestone is the ObjectBox adapter. It will remain dry-run-only until
-the Store database schema has been validated against the public 1.x model.
+The next milestone is validating that read-only report against real Store data.
+Any future repair adapter will remain dry-run-only until the Store database
+schema and invariants have been validated against the public 1.x model.
 
 ## Why a companion is necessary
 
@@ -60,9 +63,23 @@ To create a consistent database backup while OpenBubbles is closed:
 .\tools\Backup-OpenBubblesData.ps1
 ```
 
+To create the smaller, hash-verified ObjectBox snapshot accepted by the local
+inspector:
+
+```powershell
+.\tools\New-OpenBubblesInspectionSnapshot.ps1
+```
+
+End users should download the `OpenBubbles-Contact-Bridge-Windows` workflow
+artifact and double-click `Start-OpenBubblesDatabaseInspection.cmd`. It creates
+and verifies a snapshot, runs the compiled inspector, saves a redacted
+count-only report, and removes the temporary database copy automatically. If
+the app starts or the source database changes during the copy, the operation
+fails and removes the incomplete snapshot.
+
 ## Development
 
-Requires Dart 3.4 or newer.
+Reproducible builds use Dart 3.13.7 and the committed dependency lockfile.
 
 ```powershell
 dart pub get

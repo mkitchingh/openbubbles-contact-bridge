@@ -11,11 +11,77 @@ jobs:
   dart:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-      - run: dart pub get
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1
+        with:
+          sdk: 3.13.7
+      - name: Restore locked Dart dependencies
+        shell: powershell
+        run: |
+          dart pub get
+          git diff --exit-code -- pubspec.lock
+      - name: Install pinned ObjectBox native library
+        shell: bash
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/objectbox/objectbox-c/ae135a53ed39d70b23f435e0a1329305c669ab51/download.sh) --quiet 4.0.2
+          echo 'bf80de14fa92af47746322bf6f9704d3b157680535ad9fc413e8a02ccf32f6a8  lib/objectbox.dll' | sha256sum --check --strict
       - run: dart analyze --fatal-infos
       - run: dart test
       - name: Test Windows discovery
         shell: powershell
         run: ./test/Discovery.SelfTest.ps1
+      - name: Compile Windows inspector
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path build/package -Force | Out-Null
+          dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
+      - name: Assemble Windows artifact
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path build/package/lib -Force | Out-Null
+          New-Item -ItemType Directory -Path build/package/tools -Force | Out-Null
+          Copy-Item lib/objectbox.dll build/package/lib/objectbox.dll
+          Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
+          Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
+          Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
+          Copy-Item README.md, LICENSE build/package/
+          Get-ChildItem build/package -Recurse -File | ForEach-Object {
+            [pscustomobject]@{
+              path = $_.FullName.Substring((Resolve-Path build/package).Path.Length + 1)
+              size = $_.Length
+              sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+            }
+          } | ConvertTo-Json | Set-Content build/package/manifest.json -Encoding utf8
+      - name: Test packaged Windows inspector end to end
+        shell: powershell
+        run: |
+          $snapshot = Join-Path $PWD 'build/e2e-snapshot'
+          $reportPath = Join-Path $PWD 'build/e2e-report.json'
+          dart run tool/create_inspection_fixture.dart $snapshot
+          Push-Location build/package
+          try {
+            & ./openbubbles-db-inspector.exe --snapshot $snapshot --output $reportPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged inspector exited with code $LASTEXITCODE"
+            }
+          } finally {
+            Pop-Location
+          }
+          $reportText = Get-Content -LiteralPath $reportPath -Raw
+          $report = $reportText | ConvertFrom-Json
+          if ($report.entities.contacts -ne 2) { throw 'Unexpected contact count' }
+          if ($report.contacts.emptyIds -ne 1) { throw 'Unexpected empty ID count' }
+          if ($report.handles.linked -ne 1) { throw 'Unexpected linked handle count' }
+          if ($report.privacy.containsContactValues -ne $false) {
+            throw 'Privacy flag does not reject contact values'
+          }
+          $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000')
+          foreach ($value in $forbidden) {
+            if ($reportText.Contains($value)) { throw "Report leaked fixture value: $value" }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OpenBubbles-Contact-Bridge-Windows
+          path: build/package
+          if-no-files-found: error
+          retention-days: 14
