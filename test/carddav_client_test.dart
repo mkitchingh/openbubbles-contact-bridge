@@ -118,14 +118,18 @@ void main() {
     );
   });
 
-  test('translates a disabled People API response', () async {
+  test('translates a disabled CardDAV API response without leaking data', () async {
     final client = GoogleCardDavClient(
       accessToken: 'private-token',
       transport: (method, uri, body, headers) async =>
           const CardDavTransportResponse(
         statusCode: 403,
         headers: <String, String>{},
-        body: '{"status":"SERVICE_DISABLED","private":"must-not-leak"}',
+        body: '{"error":{"status":"PERMISSION_DENIED","details":['
+            '{"reason":"SERVICE_DISABLED","metadata":{'
+            '"service":"carddav.googleapis.com",'
+            '"consumer":"projects/private-project-number"}}],'
+            '"private":"must-not-leak"}}',
       ),
     );
     await expectLater(
@@ -133,7 +137,12 @@ void main() {
       throwsA(isA<StateError>().having(
         (error) => error.message,
         'message',
-        allOf(contains('People API'), isNot(contains('must-not-leak'))),
+        allOf(
+          contains('carddav.googleapis.com'),
+          contains('Google Contacts CardDAV API'),
+          isNot(contains('must-not-leak')),
+          isNot(contains('private-project-number')),
+        ),
       )),
     );
   });

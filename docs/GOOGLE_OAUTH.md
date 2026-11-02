@@ -6,7 +6,9 @@ OpenBubbles tokens.
 1. Create or select a Google Cloud project.
 2. Configure the OAuth consent screen. While the app remains in testing, add
    the Google accounts that will test it.
-3. Enable the **People API** for the same Google Cloud project.
+3. Enable **Google Contacts CardDAV API** (service ID
+   `carddav.googleapis.com`) for the same Google Cloud project. This is a
+   separate service from People API and Contacts API.
 4. Add `https://www.googleapis.com/auth/carddav` under **Data Access**.
 5. Create an OAuth client with application type **Desktop app**.
 6. Download the client JSON. Do not commit that file to this repository.
