@@ -36,6 +36,7 @@ jobs:
           New-Item -ItemType Directory -Path build/package -Force | Out-Null
           dart compile exe bin/inspect_database.dart -o build/package/openbubbles-db-inspector.exe
           dart compile exe bin/plan_google_contacts.dart -o build/package/openbubbles-google-dry-run.exe
+          dart compile exe bin/rehearse_google_contacts.dart -o build/package/openbubbles-google-rehearsal.exe
       - name: Assemble Windows artifact
         shell: powershell
         run: |
@@ -45,9 +46,11 @@ jobs:
           Copy-Item tools/OpenBubbles.Discovery.psm1 build/package/tools/OpenBubbles.Discovery.psm1
           Copy-Item tools/Start-OpenBubblesDatabaseInspection.ps1 build/package/tools/Start-OpenBubblesDatabaseInspection.ps1
           Copy-Item tools/Start-OpenBubblesGoogleDryRun.ps1 build/package/tools/Start-OpenBubblesGoogleDryRun.ps1
+          Copy-Item tools/Start-OpenBubblesGoogleRehearsal.ps1 build/package/tools/Start-OpenBubblesGoogleRehearsal.ps1
           Copy-Item tools/Start-OpenBubblesVCardDryRun.ps1 build/package/tools/Start-OpenBubblesVCardDryRun.ps1
           Copy-Item Start-OpenBubblesDatabaseInspection.cmd build/package/Start-OpenBubblesDatabaseInspection.cmd
           Copy-Item Start-OpenBubblesGoogleDryRun.cmd build/package/Start-OpenBubblesGoogleDryRun.cmd
+          Copy-Item Start-OpenBubblesGoogleRehearsal.cmd build/package/Start-OpenBubblesGoogleRehearsal.cmd
           Copy-Item Start-OpenBubblesVCardDryRun.cmd build/package/Start-OpenBubblesVCardDryRun.cmd
           Copy-Item README.md, LICENSE, oauth-client.example.json build/package/
           Get-ChildItem build/package -Recurse -File | ForEach-Object {
@@ -140,6 +143,35 @@ jobs:
           $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000', 'aot-new-contact')
           foreach ($value in $forbidden) {
             if ($reportText.Contains($value)) { throw "vCard dry-run report leaked fixture value: $value" }
+          }
+      - name: Test packaged snapshot repair rehearsal end to end
+        shell: powershell
+        run: |
+          $snapshot = Join-Path $PWD 'build/rehearsal-e2e-snapshot'
+          $vcards = Join-Path $PWD 'build/rehearsal-e2e-vcards'
+          $reportPath = Join-Path $PWD 'build/rehearsal-e2e-report.json'
+          dart run tool/create_inspection_fixture.dart $snapshot
+          dart run tool/create_vcard_fixture.dart $vcards
+          Push-Location build/package
+          try {
+            & ./openbubbles-google-rehearsal.exe --snapshot $snapshot --vcard-directory $vcards --output $reportPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged snapshot rehearsal exited with code $LASTEXITCODE"
+            }
+          } finally {
+            Pop-Location
+          }
+          $reportText = Get-Content -LiteralPath $reportPath -Raw
+          $report = $reportText | ConvertFrom-Json
+          if ($report.mode -ne 'snapshot-rehearsal') { throw 'Unexpected rehearsal mode' }
+          if ($report.liveDatabaseOpened -ne $false) { throw 'Rehearsal reported opening live data' }
+          if ($report.result.insertedStableContacts -ne 1) { throw 'Unexpected rehearsal insert count' }
+          if ($report.result.removedEmptyNonSharedContacts -ne 1) { throw 'Unexpected rehearsal removal count' }
+          if ($report.result.handlesRelinked -ne 1) { throw 'Unexpected rehearsal relink count' }
+          if ($report.verification.reopenedSuccessfully -ne $true) { throw 'Rehearsal did not reopen' }
+          $forbidden = @('AOT Secret Contact', 'aot-private@example.test', '+15550102000', 'aot-new-contact')
+          foreach ($value in $forbidden) {
+            if ($reportText.Contains($value)) { throw "Rehearsal report leaked fixture value: $value" }
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
