@@ -21,10 +21,13 @@ The repository currently contains:
 - a schema-compatible, count-only ObjectBox inspector that can open only a
   hash-verified temporary snapshot, never the live Store database;
 - a separate Google desktop OAuth/CardDAV dry-run planner that downloads
-  vCards into memory and emits only aggregate repair counts.
+  vCards into memory and emits only aggregate repair counts;
+- a snapshot-only repair rehearsal that performs and verifies the transaction
+  on a disposable copy, then deletes that copy without opening live data.
 
 The Store schema has now been validated read-only against a real 1.x profile.
-The next safety gate is validating the Google dry-run report. No repair writes
+The next safety gate is validating a Google repair rehearsal against a
+temporary verified snapshot. No live-database repair writes
 are enabled.
 
 ## Why a companion is necessary

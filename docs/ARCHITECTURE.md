@@ -20,8 +20,10 @@ The bridge therefore runs before OpenBubbles and follows this sequence:
 8. Re-open the database read-only and verify row/relation invariants.
 9. Launch the original Store app through its registered application ID.
 
-Steps 5-6 are enabled only for a count-only dry run against a verified snapshot.
-Steps 4 and 7-9 remain disabled for repair operations.
+Steps 5-6 are enabled for a count-only dry run against a verified snapshot. A
+separate rehearsal can run step 7 against that temporary snapshot, close and
+reopen it, verify invariants, and then delete it. Live-database writes and app
+launch remain disabled.
 
 The database inspector never accepts an arbitrary database directory. It
 requires a bridge-created snapshot marker, a relative database path contained
