@@ -227,13 +227,19 @@ class GoogleCardDavClient {
         }
         if (response.body.contains('SERVICE_DISABLED') ||
             response.body.contains('accessNotConfigured')) {
+          final disabledService = _disabledGoogleService(response.body);
+          final serviceDetail = disabledService ??
+              'Google Contacts CardDAV API (carddav.googleapis.com)';
           throw StateError(
-              'Google People API is disabled for this project. Enable the '
-              'People API in Google Cloud, wait a minute, and try again.');
+              '$serviceDetail is disabled for the OAuth client project. '
+              'Enable Google Contacts CardDAV API in Google Cloud, confirm '
+              'the selected project matches the OAuth JSON, wait a few '
+              'minutes, and try again.');
         }
         throw StateError(
-            'Google refused CardDAV access. Enable the People API and confirm '
-            'the CardDAV scope and test user in Google Auth Platform.');
+            'Google refused CardDAV access. Enable Google Contacts CardDAV '
+            'API and confirm the CardDAV scope and test user in Google Auth '
+            'Platform.');
       }
       throw StateError('CardDAV $method failed with HTTP ${response.statusCode}.');
     }
@@ -282,6 +288,37 @@ class GoogleCardDavClient {
       .map((element) => element.innerText.trim())
       .where((value) => value.isNotEmpty)
       .firstOrNull;
+}
+
+String? _disabledGoogleService(String body) {
+  try {
+    return _findDisabledGoogleService(jsonDecode(body));
+  } on FormatException {
+    return null;
+  }
+}
+
+String? _findDisabledGoogleService(Object? value) {
+  if (value is Map) {
+    if (value['reason'] == 'SERVICE_DISABLED') {
+      final metadata = value['metadata'];
+      final service = metadata is Map ? metadata['service'] : null;
+      if (service is String &&
+          RegExp(r'^[a-z0-9.-]+\.googleapis\.com$').hasMatch(service)) {
+        return service;
+      }
+    }
+    for (final child in value.values) {
+      final result = _findDisabledGoogleService(child);
+      if (result != null) return result;
+    }
+  } else if (value is List) {
+    for (final child in value) {
+      final result = _findDisabledGoogleService(child);
+      if (result != null) return result;
+    }
+  }
+  return null;
 }
 
 class _CardDavResponse {
