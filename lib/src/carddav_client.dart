@@ -228,9 +228,8 @@ class GoogleCardDavClient {
         if (response.body.contains('SERVICE_DISABLED') ||
             response.body.contains('accessNotConfigured')) {
           final disabledService = _disabledGoogleService(response.body);
-          final serviceDetail = disabledService == null
-              ? 'Google Contacts CardDAV API (carddav.googleapis.com)'
-              : disabledService;
+          final serviceDetail = disabledService ??
+              'Google Contacts CardDAV API (carddav.googleapis.com)';
           throw StateError(
               '$serviceDetail is disabled for the OAuth client project. '
               'Enable Google Contacts CardDAV API in Google Cloud, confirm '
